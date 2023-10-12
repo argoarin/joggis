@@ -1,4 +1,7 @@
 package app.src.main.java.com.example.joggis
 
-class Goal {
-}
+data class Goal(
+    val goalId: String,
+    val userId: String,
+    val goalText: String,
+)
