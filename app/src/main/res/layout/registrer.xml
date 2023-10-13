@@ -9,54 +9,42 @@
     <!-- Username -->
     <EditText
         android:id="@+id/usernameEditText"
-        android:layout_width="267dp"
-        android:layout_height="48dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
-        android:autofillHints="username"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:hint="@string/username_hint"
-        android:inputType="text" />
-
+        android:inputType="text"
+        android:layout_marginBottom="16dp"
+        android:layout_marginTop="16dp"
+        android:autofillHints="username" />
 
     <!-- Email -->
     <EditText
         android:id="@+id/emailEditText"
-        android:layout_width="267dp"
-        android:layout_height="48dp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:autofillHints="emailAddress"
         android:hint="@string/email_hint"
-        android:inputType="textEmailAddress" />
+        android:inputType="textEmailAddress"
+        android:autofillHints="emailAddress" />
+
     <!-- Password -->
     <EditText
         android:id="@+id/passwordEditText"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
+        android:layout_height="wrap_content"
         android:hint="@string/password_hint"
         android:inputType="textPassword"
         android:layout_marginBottom="16dp"
         android:autofillHints="password" />
 
-    <!-- Login -->
+    <!-- Registration Button -->
     <Button
-        android:id="@+id/loginButton"
-        android:layout_width="267dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:background="#006400"
-        android:text="@string/login_text"
-        android:textColor="#FFFFFF" />
-
-    <!-- Registration -->
-    <Button
-        android:id="@+id/registerButton"
+        android:id="@+id/registrationButton"
         android:layout_width="267dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:background="#996633"
         android:text="@string/register_text"
         android:textColor="#FFFFFF" />
-
-
 
 </LinearLayout>
