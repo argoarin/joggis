@@ -1,11 +1,9 @@
-package app.src.main.java.com.example.joggis
+package com.example.joggis
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.layout.Layout
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
@@ -16,12 +14,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavController
-import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.unit.dp
+
+/*
+UI currently has Home Screen with Login/Register button
+Login/Register navigates to Login/Register page
+*/
 object UI {
 
     @Composable
@@ -91,7 +91,7 @@ object UI {
                 HomeScreen(navController)
             }
             composable("loginRegister") {
-                UI.LoginRegisterScreen(navController)
+                LoginRegisterScreen(navController)
             }
         }
     }

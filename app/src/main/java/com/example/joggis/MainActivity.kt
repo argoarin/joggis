@@ -10,8 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.joggis.ui.theme.JoggisTheme
-import androidx.compose.foundation.layout.*
-import app.src.main.java.com.example.joggis.UI
 
 
 class MainActivity : ComponentActivity() {
