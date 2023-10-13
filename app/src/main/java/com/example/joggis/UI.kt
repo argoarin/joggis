@@ -49,13 +49,15 @@ object UI {
         }
     }
 
-    @Preview(showBackground = true)
-    @Composable
-    fun HomeScreenPreview() {
-        MaterialTheme {
-            Surface {
-                AppNavigator()
-            }
+
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HomeScreenPreview() {
+    MaterialTheme {
+        Surface {
+            UI.AppNavigator()
         }
     }
 }
