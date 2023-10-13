@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "525823367490",
+    "project_id": "joggis-55c45",
+    "storage_bucket": "joggis-55c45.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:525823367490:android:4b42e5c1a78a999f7d50db",
+        "android_client_info": {
+          "package_name": "com.example.joggis"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAjWYONV9aohGSgzO7w5s7plNbqLA4W7KU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
