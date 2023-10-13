@@ -17,6 +17,7 @@ import androidx.navigation.NavController
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import com.google.firebase.auth.FirebaseAuth
 
 /*
 UI currently has Home Screen with Login/Register button
@@ -47,6 +48,9 @@ object UI {
     fun LoginRegisterScreen(navController: NavController) {
         var email by remember { mutableStateOf("") }
         var password by remember { mutableStateOf("") }
+        var loginError by remember { mutableStateOf<String?>(null) }
+
+        val firebaseAuth = FirebaseAuth.getInstance()
 
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(
@@ -74,13 +78,44 @@ object UI {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Button(onClick = {
-                    // Handle login/register logic here
+                    firebaseAuth.createUserWithEmailAndPassword(email, password)
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                // Sign in success, navigate to home or other destination
+                                navController.popBackStack()
+                            } else {
+                                // If sign in fails, display a message to the user.
+                                loginError = task.exception?.message
+                            }
+                        }
                 }) {
-                    Text("Submit")
+                    Text("Register")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(onClick = {
+                    firebaseAuth.signInWithEmailAndPassword(email, password)
+                        .addOnCompleteListener { task ->
+                            if (task.isSuccessful) {
+                                // Sign in success, navigate to home or other destination
+                                navController.popBackStack()
+                            } else {
+                                // If sign in fails, display a message to the user.
+                                loginError = task.exception?.message
+                            }
+                        }
+                }) {
+                    Text("Login")
+                }
+
+                loginError?.let {
+                    Text(text = it, color = MaterialTheme.colors.error)
                 }
             }
         }
     }
+
 
     @Composable
     fun AppNavigator() {
