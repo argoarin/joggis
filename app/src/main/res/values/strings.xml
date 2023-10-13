@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">joggis</string>
+
+    <string name="username_hint">Username</string>
+    <string name="password_hint">Password</string>
+    <string name="register_text">Register</string>
+    <string name="login_text">Log In</string>
+    <string name="email_hint">E-postadresse</string>
 </resources>
