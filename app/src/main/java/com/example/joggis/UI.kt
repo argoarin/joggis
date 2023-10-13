@@ -16,7 +16,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.NavController
-
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
 object UI {
 
     @Composable
@@ -30,8 +35,48 @@ object UI {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                Button(onClick = { /* Later you can add navigation to login/register screen */ }) {
+                Button(onClick = { navController.navigate("loginRegister") }) {
                     Text(text = "Log in/Register")
+                }
+            }
+        }
+    }
+
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun LoginRegisterScreen(navController: NavController) {
+        var email by remember { mutableStateOf("") }
+        var password by remember { mutableStateOf("") }
+
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(16.dp)
+            ) {
+                TextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("E-mail Address") },
+                    placeholder = { Text("Enter e-mail") }
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    placeholder = { Text("Enter password") },
+                    visualTransformation = PasswordVisualTransformation()
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Button(onClick = {
+                    // Handle login/register logic here
+                }) {
+                    Text("Submit")
                 }
             }
         }
@@ -45,9 +90,12 @@ object UI {
             composable("home") {
                 HomeScreen(navController)
             }
-            // Add other destinations as needed
+            composable("loginRegister") {
+                UI.LoginRegisterScreen(navController)
+            }
         }
     }
+
 
 
 }
