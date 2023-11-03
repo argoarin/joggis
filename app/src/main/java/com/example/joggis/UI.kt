@@ -6,6 +6,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
@@ -18,15 +19,18 @@ import androidx.navigation.NavController
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.example.joggis.RegistrationActivity
 
 object UI {
 
     @Composable
     fun AppNavigator() {
         val navController = rememberNavController()
+        val registrationActivity = remember {RegistrationActivity()}
         /*
         UI currently has Startup Screen with Login/Register button
         Login/Register button navigates to Login/Register page
@@ -36,6 +40,10 @@ object UI {
             composable("startup") { StartupScreen(navController) }
             composable("loginRegister") { LoginRegisterScreen(navController) }
             composable("home") { HomePage(navController) }
+            composable("registerActivity") {
+                // Pass the instance of RegistrationActivity to the RegisterActivityScreen composable
+                RegisterActivityScreen(navController, registrationActivity)
+            }
             // Other destinations...
         }
     }
@@ -147,6 +155,50 @@ object UI {
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RegisterActivityScreen(navController: NavController, registrationActivity: RegistrationActivity) {
+    // State variables to hold the input from the user
+    var description by remember { mutableStateOf("") }
+    var duration by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        TextField(
+            value = description,
+            onValueChange = { description = it },
+            label = { Text("Description") }
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextField(
+            value = duration,
+            onValueChange = { duration = it },
+            label = { Text("Duration (minutes)") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Button(onClick = {
+            // Assuming the duration input is a valid integer
+            val durationInt = duration.toIntOrNull()
+            if (description.isNotBlank() && durationInt != null) {
+                registrationActivity.registerActivity(description, durationInt)
+                // Optionally navigate back to the home page or show a success message
+                navController.popBackStack()
+            } else {
+                // Handle the error state
+            }
+        }) {
+            Text("Register Activity")
+        }
+    }
+}
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -170,7 +222,7 @@ fun HomePage(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
-                    .clickable { /* Handle click, navigate to register activity */ },
+                    .clickable { navController.navigate("registerActivity") },
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Box(
