@@ -69,5 +69,6 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.4")
     implementation("androidx.compose.ui:ui:1.5.3")
     implementation("androidx.compose.material:material:1.5.3")
+    implementation("com.google.firebase:firebase-firestore:24.9.1")
 }
 
