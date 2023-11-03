@@ -22,16 +22,16 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 
-/*
-UI currently has Home Screen with Login/Register button
-Login/Register navigates to Login/Register page
-*/
 object UI {
 
     @Composable
     fun AppNavigator() {
         val navController = rememberNavController()
-
+        /*
+        UI currently has Startup Screen with Login/Register button
+        Login/Register button navigates to Login/Register page
+        Login on Login/Register page leads to Home page
+        */
         NavHost(navController = navController, startDestination = "startup") {
             composable("startup") { StartupScreen(navController) }
             composable("loginRegister") { LoginRegisterScreen(navController) }
