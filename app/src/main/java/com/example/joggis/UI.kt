@@ -45,17 +45,11 @@ object UI {
     fun AppNavigator() {
         val navController = rememberNavController()
         val registrationActivity = remember {RegistrationActivity()}
-        /*
-        UI currently has Startup Screen with Login/Register button
-        Login/Register button navigates to Login/Register page
-        Login on Login/Register page leads to Home page
-        */
         NavHost(navController = navController, startDestination = "startup") {
             composable("startup") { StartupScreen(navController) }
             composable("loginRegister") { LoginRegisterScreen(navController) }
             composable("home") { HomePage(navController) }
             composable("registerActivity") {
-                // Pass the instance of RegistrationActivity to the RegisterActivityScreen composable
                 RegisterActivityScreen(navController, registrationActivity)
             }
             composable("activities") { ActivitiesScreen(navController) }
@@ -237,7 +231,6 @@ fun ActivitiesScreen(navController: NavController) {
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
     val density = LocalDensity.current
 
-    // Load the activities when the Composable enters the Composition
     LaunchedEffect(Unit) {
         if (user != null) {
             FirebaseFirestore.getInstance()
@@ -326,7 +319,7 @@ fun HomePage(navController: NavController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding), // Apply padding to avoid overlapping with the TopAppBar
+                .padding(innerPadding),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
