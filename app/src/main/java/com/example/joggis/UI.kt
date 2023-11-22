@@ -71,6 +71,9 @@ object UI {
             composable("privateChat/{username}") { backStackEntry ->
                 PrivateChatPage(navController, backStackEntry.arguments?.getString("username") ?: "")
             }
+            composable("goal") {
+                GoalsScreen(navController = navController, goalManager = GoalManager())
+            }
             // Other destinations...
         }
     }
@@ -589,10 +592,14 @@ fun ActivitiesScreen(navController: NavController) {
             )
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(padding)) {
             LazyColumn(
                 state = listState,
-                modifier = Modifier.align(Alignment.Center).fillMaxWidth(),
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth(),
                 contentPadding = PaddingValues(horizontal = 16.dp)
             ) {
                 val itemCount = activities.size
@@ -627,6 +634,104 @@ fun ActivityItem(activity: Activity) {
             Text(text = "Description: ${activity.description}", style = MaterialTheme.typography.subtitle1)
             Text(text = "Duration: ${activity.duration} minutes", style = MaterialTheme.typography.subtitle1)
             Text(text = "Date: ${DateFormat.getDateTimeInstance().format(activity.date)}", style = MaterialTheme.typography.subtitle1)
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun GoalsScreen(navController: NavController, goalManager: GoalManager) {
+    val userId = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+    val goalsState = remember { mutableStateOf<List<Goal>>(emptyList()) }
+
+    LaunchedEffect(userId) {
+        goalManager.getGoalsFlow(userId).collect { goalsList ->
+            goalsState.value = goalsList
+        }
+    }
+
+    val goals = goalsState.value
+    val context = LocalContext.current
+    var newGoalText by remember { mutableStateOf("") }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("My Goals") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Top
+        ) {
+            LazyColumn {
+                items(goals) { goal ->
+                    GoalItem(goal)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            TextField(
+                value = newGoalText,
+                onValueChange = { newGoalText = it },
+                label = { Text("Enter New Goal") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(onClick = {
+                if (newGoalText.isNotBlank()) {
+                    goalManager.addGoal(
+                        userId = userId,
+                        goalText = newGoalText,
+                        onSuccess = {
+                            Toast.makeText(context, "Goal added!", Toast.LENGTH_SHORT).show()
+                            newGoalText = ""
+                        },
+                        onFailure = { exception ->
+                            Toast.makeText(context, "Error: ${exception.message}", Toast.LENGTH_SHORT).show()
+                        }
+                    )
+                }
+            }) {
+                Text("Add New Goal")
+            }
+        }
+    }
+}
+
+
+
+
+
+@Composable
+fun GoalItem(goal: Goal) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable { /* Handle click on a goal item if needed */ }
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+        ) {
+            Text(text = "Goal Text: ${goal.goalText}", style = MaterialTheme.typography.subtitle1)
+            Text(text = "Goal ID: ${goal.goalId}", style = MaterialTheme.typography.subtitle1)
+            Text(text = "User ID: ${goal.userId}", style = MaterialTheme.typography.subtitle1)
         }
     }
 }
@@ -738,6 +843,24 @@ fun HomePage(navController: NavController) {
                     Text(text = "Search", style = MaterialTheme.typography.h6)
                 }
             }
+
+            // Goal
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .clickable { navController.navigate("goal") },
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(text = "Goal", style = MaterialTheme.typography.h6)
+                }
+            }
         }
     }
 }
@@ -771,11 +894,24 @@ fun SearchScreen(navController: NavController) {
             ageOrBirthYear = if (ageQuery.isNotBlank()) ageQuery.toInt() else null
         )
     }
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Search") },
+                navigationIcon = {
+                    IconButton(onClick = { navController.popBackStack() }) {
+                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
         TextField(
             value = usernameQuery,
             onValueChange = { usernameQuery = it },
@@ -824,6 +960,7 @@ fun SearchScreen(navController: NavController) {
         } else {
             Text(text = "No results found.")
         }
+    }
     }
 }
 
