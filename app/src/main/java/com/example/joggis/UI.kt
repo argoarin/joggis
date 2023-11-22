@@ -2,6 +2,7 @@ package com.example.joggis
 
 import android.annotation.SuppressLint
 import android.os.Build
+import android.util.Log
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
@@ -63,6 +64,9 @@ object UI {
             }
             composable("chat") {
                 ChatPage(navController)
+            }
+            composable("search") {
+                SearchScreen(navController = navController)
             }
             composable("privateChat/{username}") { backStackEntry ->
                 PrivateChatPage(navController, backStackEntry.arguments?.getString("username") ?: "")
@@ -716,6 +720,24 @@ fun HomePage(navController: NavController) {
                     Text(text = "Activities", style = MaterialTheme.typography.h6)
                 }
             }
+
+            // Search
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .clickable { navController.navigate("search") },
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(text = "Search", style = MaterialTheme.typography.h6)
+                }
+            }
         }
     }
 }
@@ -729,6 +751,98 @@ fun HomeScreenPreview() {
     MaterialTheme {
         Surface {
             UI.AppNavigator()
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SearchScreen(navController: NavController) {
+    var usernameQuery by remember { mutableStateOf("") }
+    var skillLevelQuery by remember { mutableStateOf("") }
+    var ageQuery by remember { mutableStateOf("") }
+    var searchResults by remember { mutableStateOf(emptyList<UserProfile>()) }
+
+    // Use LaunchedEffect to observe changes to usernameQuery, skillLevelQuery, and ageQuery
+    LaunchedEffect(usernameQuery, skillLevelQuery, ageQuery) {
+        searchResults = FirebaseRepository.searchPartner(
+            username = if (usernameQuery.isNotBlank()) usernameQuery else null,
+            skillLevel = if (skillLevelQuery.isNotBlank()) skillLevelQuery.toLong() else null,
+            ageOrBirthYear = if (ageQuery.isNotBlank()) ageQuery.toInt() else null
+        )
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        TextField(
+            value = usernameQuery,
+            onValueChange = { usernameQuery = it },
+            placeholder = { Text("Search by username") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Add a separate TextField for age
+        TextField(
+            value = ageQuery,
+            onValueChange = { ageQuery = it },
+            placeholder = { Text("Search by age") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Add a separate TextField for skill level
+        TextField(
+            value = skillLevelQuery,
+            onValueChange = { skillLevelQuery = it },
+            placeholder = { Text("Search by skill level") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+
+        Button(onClick = {
+            // You can keep the common search logic here if needed
+        }) {
+            Text("Search")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        if (searchResults.isNotEmpty()) {
+            LazyColumn {
+                items(searchResults) { userProfile ->
+                    // Display each search result in a composable
+                    SearchResultItem(userProfile)
+                }
+            }
+        } else {
+            Text(text = "No results found.")
+        }
+    }
+}
+
+
+@Composable
+fun SearchResultItem(userProfile: UserProfile) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+        ) {
+            Text(text = "Username: ${userProfile.username}", style = MaterialTheme.typography.subtitle1)
+            Log.d("SearchResultItem", "Calculated Age: ${userProfile.calculateAge()}") // Add this line for debugging
+            Text(text = "Age: ${userProfile.calculateAge()}", style = MaterialTheme.typography.subtitle1)
+            Text(text = "Skill Level: ${userProfile.skillLevel}", style = MaterialTheme.typography.subtitle1)
         }
     }
 }
