@@ -1,47 +1,51 @@
 package com.example.joggis
 
 import android.annotation.SuppressLint
+import android.os.Build
 import android.widget.Toast
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.Button
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.NavController
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser
-import com.example.joggis.RegistrationActivity
 import com.google.firebase.firestore.FirebaseFirestore
 import java.text.DateFormat
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.Text
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.unit.Dp
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 object UI {
 
+    @RequiresApi(Build.VERSION_CODES.O)
     @Composable
     fun AppNavigator() {
         val navController = rememberNavController()
@@ -56,6 +60,12 @@ object UI {
             composable("activities") { ActivitiesScreen(navController) }
             composable("profile") {
                 ProfileScreen(navController)
+            }
+            composable("chat") {
+                ChatPage(navController)
+            }
+            composable("privateChat/{username}") { backStackEntry ->
+                PrivateChatPage(navController, backStackEntry.arguments?.getString("username") ?: "")
             }
             // Other destinations...
         }
@@ -77,6 +87,209 @@ object UI {
             }
         }
     }
+
+    @Composable
+    fun ChatPage(navController: NavController) {
+        val chatManager = remember { ChatManager() }
+        val profileManager = remember { ProfileManager() }
+        val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        // State for usernames and current user's username
+        var usernames by remember { mutableStateOf<List<String>>(emptyList()) }
+        var currentUserUsername by remember { mutableStateOf<String?>(null) }
+        var loading by remember { mutableStateOf(true) }
+        var selectedUsername by remember { mutableStateOf<String?>(null) }
+
+        // Load usernames and current user's username
+        LaunchedEffect(Unit) {
+            chatManager.getAllUsernames(onSuccess = { loadedUsernames ->
+                usernames = loadedUsernames
+                loading = false
+            }, onFailure = { /* Handle failure */ })
+
+            profileManager.getProfile(currentUserUid, onSuccess = { userProfile ->
+                currentUserUsername = userProfile?.username
+            }, onFailure = { /* Handle failure */ })
+        }
+
+        // UI
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            // Back button
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                }
+            }
+
+            // Check if user has a username
+            if (currentUserUsername.isNullOrEmpty()) {
+                Text("Go to Profile and create a username to use chat", Modifier.align(Alignment.CenterHorizontally))
+                Button(onClick = { navController.navigate("profile") }) {
+                    Text("Go to My Profile")
+                }
+            } else {
+                if (loading) {
+                    CircularProgressIndicator()
+                } else {
+                    LazyColumn {
+                        items(usernames) { username ->
+                            val displayUsername = if (username == currentUserUsername) "$username (Myself)" else username
+                            TextButton(onClick = { selectedUsername = username }) {
+                                Text(displayUsername)
+                            }
+                        }
+                    }
+
+                    Button(
+                        onClick = { navController.navigate("privateChat/${selectedUsername}") },
+                        enabled = selectedUsername != null
+                    ) {
+                        Text("Chat with ${selectedUsername ?: "Select a user"}")
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    @OptIn(ExperimentalMaterial3Api::class)
+    @Composable
+    fun PrivateChatPage(navController: NavController, toUsername: String) {
+        val chatManager = remember { ChatManager() }
+        val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        var messages by remember { mutableStateOf<List<Chat>>(emptyList()) }
+        var loading by remember { mutableStateOf(true) }
+        var inputText by remember { mutableStateOf("") }
+        var error by remember { mutableStateOf("") }
+
+        // Get UID by username
+        val toUid = remember { mutableStateOf("") }
+        LaunchedEffect(toUsername) {
+            chatManager.getUidByUsername(toUsername, onSuccess = { uid ->
+                toUid.value = uid
+                loading = false
+            }, onFailure = { /* Handle failure */ })
+        }
+
+        // Load messages
+        LaunchedEffect(toUid.value) {
+            chatManager.loadMessages(currentUserUid, toUid.value, onSuccess = { loadedMessages ->
+                messages = loadedMessages
+                loading = false
+            }, onFailure = { /* Handle failure */ })
+        }
+
+        // UI Elements
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Back button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                }
+            }
+
+            if (loading) {
+                CircularProgressIndicator()
+            } else {
+                LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                    items(messages) { chat ->
+                        val isCurrentUser = chat.fromUid == currentUserUid
+                        MessageBubble(chat, isCurrentUser, toUsername)
+                    }
+                }
+            }
+
+            // Message input and send button
+            TextField(
+                value = inputText,
+                onValueChange = { inputText = it },
+                label = { Text("Enter your message") },
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            if (error.isNotEmpty()) {
+                Text(text = error, color = MaterialTheme.colors.error)
+            }
+
+            Button(
+                onClick = {
+                    if (inputText.isNotEmpty()) {
+                        chatManager.sendMessage(
+                            Chat(
+                                fromUid = currentUserUid,
+                                toUid = toUid.value,
+                                text = inputText,
+                                date = Date() // Use current date
+                            ),
+                            onSuccess = {
+                                inputText = "" // Clear the text field
+                                error = ""
+                            },
+                            onFailure = {
+                                error = "Failed to send message."
+                            }
+                        )
+                    } else {
+                        error = "Can't send an empty message."
+                    }
+                },
+                enabled = inputText.isNotEmpty()
+            ) {
+                Text("Send")
+            }
+        }
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Composable
+    fun MessageBubble(chat: Chat, isCurrentUser: Boolean, toUsername: String) {
+        val backgroundColor = if (isCurrentUser) Color(0xFFADD8E6) else Color(0xFFD3D3D3) // Light blue for sent, light grey for received
+        val alignment = if (isCurrentUser) Alignment.CenterEnd else Alignment.CenterStart
+        val senderUsername = if (isCurrentUser) "You" else toUsername // Replace "You" with your actual user's username if available
+
+        Box(
+            contentAlignment = alignment,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(8.dp)
+        ) {
+            Column(
+                horizontalAlignment = if (isCurrentUser) Alignment.End else Alignment.Start,
+                modifier = Modifier
+                    .background(backgroundColor, RoundedCornerShape(8.dp))
+                    .padding(8.dp)
+            ) {
+                Text(chat.text, textAlign = TextAlign.Center)
+                Text(
+                    text = "$senderUsername sent at ${formatDate(chat.date)}",
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+
+    private fun formatDate(date: Date): String {
+        val formatter = SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault())
+        return formatter.format(date)
+    }
+
 
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
@@ -214,6 +427,17 @@ fun ProfileScreen(navController: NavController) {
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxSize()
         ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                horizontalArrangement = Arrangement.Start
+            ) {
+                IconButton(onClick = { navController.popBackStack() }) {
+                    Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+                }
+            }
+
             TextField(value = username, onValueChange = { username = it }, label = { Text("Username") })
             TextField(value = profileImageUrl, onValueChange = { profileImageUrl = it }, label = { Text("Profile Image URL") })
             TextField(value = description, onValueChange = { description = it }, label = { Text("Description") })
@@ -439,6 +663,24 @@ fun HomePage(navController: NavController) {
                 }
             }
 
+            // Chat Box
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .clickable { navController.navigate("chat") },
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(text = "Chat", style = MaterialTheme.typography.h6)
+                }
+            }
+
             /// Register Activity Box
             Card(
                 modifier = Modifier
@@ -480,6 +722,7 @@ fun HomePage(navController: NavController) {
 
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
