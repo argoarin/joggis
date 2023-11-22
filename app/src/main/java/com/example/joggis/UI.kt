@@ -181,17 +181,24 @@ object UI {
         LaunchedEffect(toUsername) {
             chatManager.getUidByUsername(toUsername, onSuccess = { uid ->
                 toUid.value = uid
+                Log.d("PrivateChatPage", "UID for $toUsername: $uid") // Log the UID
                 loading = false
-            }, onFailure = { /* Handle failure */ })
+            }, onFailure = { exception ->
+                Log.e("PrivateChatPage", "Failed to get UID: ${exception.message}")
+                loading = false
+            })
         }
 
         // Load messages
         LaunchedEffect(toUid.value) {
-            chatManager.loadMessages(currentUserUid, toUid.value, onSuccess = { loadedMessages ->
-                messages = loadedMessages
-                loading = false
-            }, onFailure = { /* Handle failure */ })
+            if (toUid.value.isNotBlank()) {
+                chatManager.loadMessages(currentUserUid, toUid.value, onSuccess = { loadedMessages ->
+                    messages = loadedMessages
+                    loading = false
+                }, onFailure = { /* Handle failure */ })
+            }
         }
+
 
         // UI Elements
         Column(
@@ -886,7 +893,6 @@ fun SearchScreen(navController: NavController) {
     var ageQuery by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf(emptyList<UserProfile>()) }
 
-    // Use LaunchedEffect to observe changes to usernameQuery, skillLevelQuery, and ageQuery
     LaunchedEffect(usernameQuery, skillLevelQuery, ageQuery) {
         searchResults = FirebaseRepository.searchPartner(
             username = if (usernameQuery.isNotBlank()) usernameQuery else null,
@@ -912,74 +918,100 @@ fun SearchScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(padding)
         ) {
-        TextField(
-            value = usernameQuery,
-            onValueChange = { usernameQuery = it },
-            placeholder = { Text("Search by username") },
-            modifier = Modifier.fillMaxWidth()
-        )
+            TextField(
+                value = usernameQuery,
+                onValueChange = { usernameQuery = it },
+                placeholder = { Text("Search by username") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Add a separate TextField for age
-        TextField(
-            value = ageQuery,
-            onValueChange = { ageQuery = it },
-            placeholder = { Text("Search by age") },
-            modifier = Modifier.fillMaxWidth()
-        )
+            // Add a separate TextField for age
+            TextField(
+                value = ageQuery,
+                onValueChange = { ageQuery = it },
+                placeholder = { Text("Search by age") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Add a separate TextField for skill level
-        TextField(
-            value = skillLevelQuery,
-            onValueChange = { skillLevelQuery = it },
-            placeholder = { Text("Search by skill level") },
-            modifier = Modifier.fillMaxWidth()
-        )
+            // Add a separate TextField for skill level
+            TextField(
+                value = skillLevelQuery,
+                onValueChange = { skillLevelQuery = it },
+                placeholder = { Text("Search by skill level") },
+                modifier = Modifier.fillMaxWidth()
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-
-        Button(onClick = {
-            // You can keep the common search logic here if needed
-        }) {
-            Text("Search")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (searchResults.isNotEmpty()) {
-            LazyColumn {
-                items(searchResults) { userProfile ->
-                    // Display each search result in a composable
-                    SearchResultItem(userProfile)
-                }
+            Button(onClick = { /** Do something here **/ }) {
+                Text("Search")
             }
-        } else {
-            Text(text = "No results found.")
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (searchResults.isNotEmpty()) {
+                LazyColumn {
+                    items(searchResults) { userProfile ->
+                        SearchResultItem(
+                            userProfile = userProfile,
+                            onProfileClick = {
+                                // Handle profile selection
+                            },
+                            onChatClick = {
+                                // Navigate to private chat with the selected username
+                                navController.navigate("privateChat/${userProfile.username}")
+                            }
+                        )
+                    }
+                }
+            } else {
+                Text(text = "No results found.")
+            }
         }
-    }
     }
 }
 
-
 @Composable
-fun SearchResultItem(userProfile: UserProfile) {
+fun SearchResultItem(userProfile: UserProfile, onProfileClick: () -> Unit, onChatClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
     ) {
-        Column(
+        Row(
             modifier = Modifier
-                .padding(16.dp)
+                .clickable(onClick = onProfileClick)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "Username: ${userProfile.username}", style = MaterialTheme.typography.subtitle1)
-            Log.d("SearchResultItem", "Calculated Age: ${userProfile.calculateAge()}") // Add this line for debugging
-            Text(text = "Age: ${userProfile.calculateAge()}", style = MaterialTheme.typography.subtitle1)
-            Text(text = "Skill Level: ${userProfile.skillLevel}", style = MaterialTheme.typography.subtitle1)
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = "Username: ${userProfile.username}",
+                    style = MaterialTheme.typography.subtitle1
+                )
+                Text(
+                    text = "Age: ${userProfile.calculateAge()}",
+                    style = MaterialTheme.typography.subtitle1
+                )
+                Text(
+                    text = "Skill Level: ${userProfile.skillLevel}",
+                    style = MaterialTheme.typography.subtitle1
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Button(onClick = onChatClick) {
+                Text("Chat")
+            }
         }
     }
 }
+
+

@@ -1,15 +1,14 @@
 package com.example.joggis
 
-import com.google.firebase.firestore.CollectionReference
+import android.util.Log
 import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
 import com.google.firebase.firestore.Query
-import java.text.SimpleDateFormat
+import kotlinx.coroutines.tasks.await
 import java.util.Calendar
 import java.util.Locale
-import android.util.Log
 
 data class UserProfile(
+    var userId: String = "",
     val username: String = "",
     val skillLevel: Long = 0,
     val birthdate: String = ""
@@ -57,14 +56,12 @@ data class UserProfile(
 
 
 
-    constructor() : this("", 0, "")
 }
 object FirebaseRepository {
     suspend fun searchPartner(
         username: String? = null,
         skillLevel: Long? = null,
-        ageOrBirthYear: Int? = null,
-        birthdate: String? = null
+        ageOrBirthYear: Int? = null
     ): List<UserProfile> {
         var query: Query = FirebaseFirestore.getInstance().collection("profile")
 
@@ -96,5 +93,9 @@ object FirebaseRepository {
 
         val querySnapshot = query.get().await()
 
-        return querySnapshot.toObjects(UserProfile::class.java)
+        return querySnapshot.documents.mapNotNull { document ->
+            document.toObject(UserProfile::class.java)?.apply {
+                userId = document.getString("uid") ?: "" // Retrieve uid from the document
+            }
+        }
     }}
