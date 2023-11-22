@@ -416,6 +416,7 @@ fun ProfileScreen(navController: NavController) {
 
     // Birthdate format validation
     val birthdateRegex = Regex("\\d{2}\\.\\d{2}\\.\\d{4}") // Pattern for "DD.MM.YYYY"
+    var skillLevelError by remember { mutableStateOf(false) }
 
     // Load profile data
     LaunchedEffect(currentUserUid) {
@@ -467,13 +468,21 @@ fun ProfileScreen(navController: NavController) {
             if (birthdateError) {
                 Text("Please use DD.MM.YYYY for birthdate", color = Color.Red)
             }
+
             TextField(
                 value = skillLevel.toString(),
                 onValueChange = { newValue ->
-                    skillLevel = newValue.toIntOrNull()?.coerceIn(1, 10) ?: skillLevel // Ensures value is between 1 and 10
+                    skillLevel = newValue.toIntOrNull() ?: skillLevel
+                    skillLevelError = skillLevel !in 1..10
                 },
-                label = { Text("Skill Level") }
+                label = { Text("Skill Level") },
+                isError = skillLevelError,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
+            if (skillLevelError) {
+                Text("Please choose a level between 1 and 10", color = Color.Red)
+            }
+
             Row {
                 Text("Private Profile")
                 Switch(checked = privateProfile, onCheckedChange = { privateProfile = it })
