@@ -35,6 +35,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
@@ -53,6 +54,9 @@ object UI {
                 RegisterActivityScreen(navController, registrationActivity)
             }
             composable("activities") { ActivitiesScreen(navController) }
+            composable("profile") {
+                ProfileScreen(navController)
+            }
             // Other destinations...
         }
     }
@@ -163,6 +167,100 @@ object UI {
     }
 
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProfileScreen(navController: NavController) {
+    val profileManager = remember { ProfileManager() }
+    val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+    var user by remember { mutableStateOf<User?>(null) }
+    var loading by remember { mutableStateOf(true) }
+    var saveMessage by remember { mutableStateOf("") }
+    var birthdateError by remember { mutableStateOf(false) }
+
+    // Initialize fields
+    var username by remember { mutableStateOf("") }
+    var profileImageUrl by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var birthdate by remember { mutableStateOf("") }
+    var privateProfile by remember { mutableStateOf(false) }
+    var skillLevel by remember { mutableStateOf(1) }
+
+    // Birthdate format validation
+    val birthdateRegex = Regex("\\d{2}\\.\\d{2}\\.\\d{4}") // Pattern for "DD.MM.YYYY"
+
+    // Load profile data
+    LaunchedEffect(currentUserUid) {
+        profileManager.getProfile(currentUserUid, onSuccess = { userProfile ->
+            user = userProfile
+            if (userProfile != null) {
+                username = userProfile.username
+                profileImageUrl = userProfile.profileImageUrl
+                description = userProfile.description
+                birthdate = userProfile.birthdate
+                privateProfile = userProfile.privateProfile
+                skillLevel = userProfile.skillLevel
+            }
+            loading = false
+        }, onFailure = { /* Handle failure */ })
+    }
+
+    if (loading) {
+        CircularProgressIndicator()
+    } else {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            TextField(value = username, onValueChange = { username = it }, label = { Text("Username") })
+            TextField(value = profileImageUrl, onValueChange = { profileImageUrl = it }, label = { Text("Profile Image URL") })
+            TextField(value = description, onValueChange = { description = it }, label = { Text("Description") })
+            TextField(
+                value = birthdate,
+                onValueChange = {
+                    birthdate = it
+                    birthdateError = !birthdateRegex.matches(it)
+                },
+                label = { Text("Birthdate (DD.MM.YYYY)") },
+                isError = birthdateError
+            )
+            if (birthdateError) {
+                Text("Please use DD.MM.YYYY for birthdate", color = Color.Red)
+            }
+            TextField(
+                value = skillLevel.toString(),
+                onValueChange = { newValue ->
+                    skillLevel = newValue.toIntOrNull()?.coerceIn(1, 10) ?: skillLevel // Ensures value is between 1 and 10
+                },
+                label = { Text("Skill Level") }
+            )
+            Row {
+                Text("Private Profile")
+                Switch(checked = privateProfile, onCheckedChange = { privateProfile = it })
+            }
+            Button(
+                onClick = {
+                    val updatedUser = User(currentUserUid, username, profileImageUrl,
+                        description, birthdate, privateProfile, skillLevel)
+                    profileManager.saveProfile(updatedUser, onSuccess = {
+                        saveMessage = "Profile successfully saved."
+                    }, onFailure = { /* Handle failure */ })
+                },
+                enabled = !birthdateError
+            ) {
+                Text("Save")
+            }
+            if (saveMessage.isNotEmpty()) {
+                Text(saveMessage)
+            }
+        }
+    }
+}
+
+
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -323,7 +421,25 @@ fun HomePage(navController: NavController) {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Register Activity Box
+            // Profile Box
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .clickable { navController.navigate("profile") },
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            ) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Text(text = "My Profile", style = MaterialTheme.typography.h6)
+                }
+            }
+
+            /// Register Activity Box
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
