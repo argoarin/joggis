@@ -2,6 +2,7 @@ package com.example.joggis
 
 import com.google.firebase.firestore.FirebaseFirestore
 
+/** Profile DB Manager **/
 class ProfileManager {
 
     private val db = FirebaseFirestore.getInstance()
