@@ -84,7 +84,7 @@ object UI {
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(text = "Joggis", style = MaterialTheme.typography.h3)
+                Text(text = "Joggis", style = MaterialTheme.typography.h1)
 
                 Spacer(modifier = Modifier.height(16.dp))
 
@@ -759,7 +759,19 @@ fun HomePage(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Joggis") }
+                title = {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp)
+                    ) {
+                        Text(
+                            "Joggis",
+                            style = MaterialTheme.typography.h4
+                        )
+                    }
+                }
             )
         }
     ) { innerPadding ->
