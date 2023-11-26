@@ -53,6 +53,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@SuppressLint("StaticFieldLeak")
 object UI {
 
     //  Variabelen blir brukt til å bytte fra en rute til en annen
@@ -99,44 +100,51 @@ object UI {
     }
 
     //fjernet navController siden global navController blir brukt
+
+    //Chat siden med oversikt over brukere
     @Composable
     fun ChatPage() {
         val chatManager = remember { ChatManager() }
         val profileManager = remember { ProfileManager() }
         val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-        // State for usernames and current user's username
         var usernames by remember { mutableStateOf<List<String>>(emptyList()) }
         var currentUserUsername by remember { mutableStateOf<String?>(null) }
         var loading by remember { mutableStateOf(true) }
         var selectedUsername by remember { mutableStateOf<String?>(null) }
+        var errorMessage by remember { mutableStateOf<String?>(null) }
 
-        // Load usernames and current user's username
         LaunchedEffect(Unit) {
             chatManager.getAllUsernames(onSuccess = { loadedUsernames ->
                 usernames = loadedUsernames
                 loading = false
-            }, onFailure = { /* Handle failure */ })
+            }, onFailure = { error ->
+                errorMessage = "Failed to load usernames: $error"
+                Log.e("ChatPage", errorMessage!!) })
 
             profileManager.getProfile(currentUserUid, onSuccess = { userProfile ->
                 currentUserUsername = userProfile?.username
-            }, onFailure = { /* Handle failure */ })
+            }, onFailure = { error ->
+                errorMessage = "Failed to load profile: $error"
+                Log.e("ChatPage", errorMessage!!) })
         }
 
-        // UI
+        if (errorMessage != null) {
+            Toast.makeText(LocalContext.current, errorMessage, Toast.LENGTH_LONG).show()
+            errorMessage = null
+        }
+
         Column(
 
             modifier = Modifier.fillMaxHeight(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Back button
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
                 Text(text = "Chat", fontSize = 26.sp)
 
             }
 
-            // Check if user has a username
             if (currentUserUsername.isNullOrEmpty()) {
                 Text(
                     "Go to Profile and create a username to use chat",
@@ -171,6 +179,7 @@ object UI {
     }
 
 
+    // Siden der man har direkte chat
     @RequiresApi(Build.VERSION_CODES.O)
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
@@ -183,7 +192,6 @@ object UI {
         var inputText by remember { mutableStateOf("") }
         var error by remember { mutableStateOf("") }
 
-        // Get UID by username
         val toUid = remember { mutableStateOf("") }
         LaunchedEffect(toUsername) {
             chatManager.getUidByUsername(toUsername, onSuccess = { uid ->
@@ -196,7 +204,6 @@ object UI {
             })
         }
 
-        // Load messages
         LaunchedEffect(toUid.value) {
             if (toUid.value.isNotBlank()) {
                 chatManager.loadMessages(
@@ -206,18 +213,18 @@ object UI {
                         messages = loadedMessages
                         loading = false
                     },
-                    onFailure = { /* Handle failure */ })
+                    onFailure = { exception ->
+                        val errorMessage = "Failed to load messages: ${exception.message}"
+                        Log.e("PrivateChatPage", errorMessage) })
             }
         }
 
 
-        // UI Elements
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxSize()
         ) {
-            // Back button
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.Start
@@ -238,7 +245,6 @@ object UI {
                 }
             }
 
-            // Message input and send button
             TextField(
                 value = inputText,
                 onValueChange = { inputText = it },
@@ -280,6 +286,7 @@ object UI {
     }
 
 
+    // UI for chat meldinger
     @RequiresApi(Build.VERSION_CODES.O)
     @Composable
     fun MessageBubble(chat: Chat, isCurrentUser: Boolean, toUsername: String) {
@@ -319,6 +326,7 @@ object UI {
 
 
 
+    // Side for login og registrering
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun LoginRegisterScreen(navController: NavController) {
@@ -327,7 +335,6 @@ object UI {
         var message by remember { mutableStateOf("") }
         var isLoading by remember { mutableStateOf(false) }
 
-        // Function to handle the login button click
         fun handleLogin() {
             if (email.isNotEmpty() && password.isNotEmpty()) {
                 isLoading = true
@@ -348,7 +355,6 @@ object UI {
             }
         }
 
-        // Function to handle the register button click
         fun handleRegister() {
             if (email.isNotEmpty() && password.isNotEmpty()) {
                 isLoading = true
@@ -408,10 +414,12 @@ object UI {
     }
 
 }
-//    fjerne navController ettersom at global nvacontroller bli brukt
+
+// Siden for profil
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen() {
+    val context = LocalContext.current
     val profileManager = remember { ProfileManager() }
     val currentUserUid = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
@@ -420,7 +428,6 @@ fun ProfileScreen() {
     var saveMessage by remember { mutableStateOf("") }
     var birthdateError by remember { mutableStateOf(false) }
 
-    // Initialize fields
     var username by remember { mutableStateOf("") }
     var profileImageUrl by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -428,11 +435,9 @@ fun ProfileScreen() {
     var privateProfile by remember { mutableStateOf(false) }
     var skillLevel by remember { mutableStateOf(1) }
 
-    // Birthdate format validation
     val birthdateRegex = Regex("\\d{2}\\.\\d{2}\\.\\d{4}") // Pattern for "DD.MM.YYYY"
     var skillLevelError by remember { mutableStateOf(false) }
 
-    // Load profile data
     LaunchedEffect(currentUserUid) {
         profileManager.getProfile(currentUserUid, onSuccess = { userProfile ->
             user = userProfile
@@ -445,7 +450,11 @@ fun ProfileScreen() {
                 skillLevel = userProfile.skillLevel
             }
             loading = false
-        }, onFailure = { /* Handle failure */ })
+        }, onFailure = { exception ->
+            val errorMessage = "Failed to load profile: ${exception.message}"
+            Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+            Log.e("ProfileScreen", errorMessage)
+            loading = false })
     }
 
     if (loading) {
@@ -518,7 +527,10 @@ fun ProfileScreen() {
                     )
                     profileManager.saveProfile(updatedUser, onSuccess = {
                         saveMessage = "Profile successfully saved."
-                    }, onFailure = { /* Handle failure */ })
+                    }, onFailure = { exception ->
+                        val errorMessage = "Failed to save profile: ${exception.message}"
+                        Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                        Log.e("ProfileScreen", errorMessage) })
                 },
                 enabled = !birthdateError
             ) {
