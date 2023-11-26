@@ -2,9 +2,9 @@ package com.example.joggis
 
 import com.google.firebase.firestore.FirebaseFirestore
 
-class ChatManager {
+class ChatManager(private val db: FirebaseFirestore) {
 
-    private val db = FirebaseFirestore.getInstance()
+    constructor() : this(FirebaseFirestore.getInstance())
 
     fun sendMessage(chat: Chat, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
         db.collection("chat")

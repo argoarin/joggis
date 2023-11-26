@@ -71,5 +71,10 @@ dependencies {
     implementation("androidx.compose.ui:ui:1.5.3")
     implementation("androidx.compose.material:material:1.5.3")
     implementation("com.google.firebase:firebase-firestore:24.9.1")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.mockito:mockito-core:4.2.0")
+    testImplementation("androidx.test:core-ktx:1.4.0")
+    testImplementation("androidx.test.ext:junit-ktx:1.1.3")
+    testImplementation("org.robolectric:robolectric:4.6.1")
 }
 
