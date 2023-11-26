@@ -7,6 +7,6 @@ data class User(
     val description: String = "",
     val birthdate: String = "", // DD.MM.YYYY
     val privateProfile: Boolean = false,
-    val skillLevel: Int = 1 // Default value as 1
+    val skillLevel: Int = 1
 )
 

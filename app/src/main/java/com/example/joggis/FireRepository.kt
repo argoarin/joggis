@@ -33,7 +33,7 @@ data class UserProfile(
 
             val today = Calendar.getInstance()
             val birthdateCalendar = Calendar.getInstance().apply {
-                set(birthYear, birthMonth - 1, birthDay) // Note: Months are zero-based
+                set(birthYear, birthMonth - 1, birthDay)
             }
 
             var age = today.get(Calendar.YEAR) - birthdateCalendar.get(Calendar.YEAR)
@@ -95,7 +95,7 @@ object FirebaseRepository {
 
         return querySnapshot.documents.mapNotNull { document ->
             document.toObject(UserProfile::class.java)?.apply {
-                userId = document.getString("uid") ?: "" // Retrieve uid from the document
+                userId = document.getString("uid") ?: ""
             }
         }
     }}

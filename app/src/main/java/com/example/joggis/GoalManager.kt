@@ -62,4 +62,12 @@ class GoalManager {
         }
     }
 
+    fun removeGoal(
+        id:String
+    ){
+        db.collection("goal")
+            .document(id)
+            .delete()
+
+    }
 }

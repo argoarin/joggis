@@ -918,7 +918,8 @@ fun SearchScreen(navController: NavController) {
         searchResults = FirebaseRepository.searchPartner(
             username = if (usernameQuery.isNotBlank()) usernameQuery else null,
             skillLevel = if (skillLevelQuery.isNotBlank()) skillLevelQuery.toLong() else null,
-            ageOrBirthYear = if (ageQuery.isNotBlank()) ageQuery.toInt() else null
+            ageOrBirthYear = if (ageQuery.isNotBlank()) ageQuery.toInt() else null,
+
         )
     }
 
