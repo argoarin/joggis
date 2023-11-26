@@ -24,14 +24,12 @@ class GoalManager {
             .whereEqualTo("userId", userId)
             .addSnapshotListener { value, error ->
                 if (error != null) {
-                    // Handle the error
                 } else {
                     val goalList = value?.toObjects(Goal::class.java) ?: emptyList()
                     goals.tryEmit(goalList)
                 }
             }
 
-        // If you need to do something when the flow is collected or canceled, use onCompletion
         goals.onCompletion { listenerRegistration.remove() }
 
         return goals

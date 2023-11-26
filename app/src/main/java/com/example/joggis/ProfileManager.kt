@@ -2,7 +2,6 @@ package com.example.joggis
 
 import com.google.firebase.firestore.FirebaseFirestore
 
-/** Profile DB Manager **/
 class ProfileManager {
 
     private val db = FirebaseFirestore.getInstance()
@@ -17,7 +16,7 @@ class ProfileManager {
             .get()
             .addOnSuccessListener { documents ->
                 if (documents.isEmpty) {
-                    onSuccess(null) // No profile found
+                    onSuccess(null)
                 } else {
                     val user = documents.documents.first().toObject(User::class.java)
                     onSuccess(user)
@@ -43,19 +42,16 @@ class ProfileManager {
             "skillLevel" to user.skillLevel
         )
 
-        // Checking if a document with the given UID already exists
         db.collection("profile")
             .whereEqualTo("uid", user.uid)
             .get()
             .addOnSuccessListener { documents ->
                 if (documents.isEmpty) {
-                    // Create a new document if not exists
                     db.collection("profile")
                         .add(profileData)
                         .addOnSuccessListener { onSuccess() }
                         .addOnFailureListener { e -> onFailure(e) }
                 } else {
-                    // Update existing document
                     documents.documents.first().reference
                         .set(profileData)
                         .addOnSuccessListener { onSuccess() }

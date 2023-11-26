@@ -12,8 +12,8 @@ class RegistrationActivity {
         description: String,
         duration: Int,
         date: Calendar = Calendar.getInstance(),
-        onSuccess: (String) -> Unit = {}, // onSuccess callback with the ID of the new document
-        onFailure: (Exception) -> Unit = {} // onFailure callback with the exception
+        onSuccess: (String) -> Unit = {},
+        onFailure: (Exception) -> Unit = {}
     ) {
         val user = FirebaseAuth.getInstance().currentUser
         if (user != null) {
@@ -27,13 +27,13 @@ class RegistrationActivity {
             db.collection("activity")
                 .add(activity)
                 .addOnSuccessListener { documentReference ->
-                    onSuccess(documentReference.id) // Invoke onSuccess callback with the document ID
+                    onSuccess(documentReference.id)
                 }
                 .addOnFailureListener { e ->
-                    onFailure(e) // Invoke onFailure callback with the exception
+                    onFailure(e)
                 }
         } else {
-            onFailure(Exception("No authenticated user found.")) // Invoke onFailure callback
+            onFailure(Exception("No authenticated user found."))
         }
     }
 }
