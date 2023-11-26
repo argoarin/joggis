@@ -543,6 +543,7 @@ fun ProfileScreen() {
     }
 }
 
+// Siden for activities
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -551,8 +552,6 @@ fun ActivitiesScreen(registrationActivity: RegistrationActivity) {
     val user = FirebaseAuth.getInstance().currentUser
     val context = LocalContext.current
     val listState = rememberLazyListState()
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
-    val density = LocalDensity.current
 
     var description by remember { mutableStateOf("") }
     var duration by remember { mutableStateOf("") }
@@ -571,7 +570,6 @@ fun ActivitiesScreen(registrationActivity: RegistrationActivity) {
                             Toast.LENGTH_SHORT
                         ).show()
                     } else {
-//                        clearing the list before adding new items
                         activities.clear()
                         for (document in value!!) {
                             val activity = document.toObject(Activity::class.java)
@@ -617,14 +615,15 @@ fun ActivitiesScreen(registrationActivity: RegistrationActivity) {
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
                 Button(onClick = {
-                    // Assuming the duration input is a valid integer
                     val durationInt = duration.toIntOrNull()
                     if (description.isNotBlank() && durationInt != null) {
                         registrationActivity.registerActivity(description, durationInt)
                         description = ""
                         duration = ""
                     } else {
-                        // Handle the error state
+                        val errorMessage = "Invalid input"
+                        Toast.makeText(context, errorMessage, Toast.LENGTH_LONG).show()
+                        Log.e("ActivitiesScreen", errorMessage)
                     }
                 }) {
                     Text("Register Activity")
@@ -637,13 +636,6 @@ fun ActivitiesScreen(registrationActivity: RegistrationActivity) {
 
                     contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
-                    val itemCount = activities.size
-                    val itemHeightEstimate = 48.dp // Estimate the height of each item
-                    val totalItemHeightPx =
-                        with(density) { (itemHeightEstimate * itemCount).toPx() }
-                    val screenHeightPx = with(density) { screenHeightDp.toPx() }
-
-
                     items(activities) { activity ->
                         ActivityItem(activity)
                     }
@@ -654,6 +646,7 @@ fun ActivitiesScreen(registrationActivity: RegistrationActivity) {
         }
     }
 }
+
 
 @Composable
 fun ActivityItem(activity: Activity) {
@@ -682,6 +675,7 @@ fun ActivityItem(activity: Activity) {
     }
 }
 
+//Siden for goals
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoalsScreen(goalManager: GoalManager) {
@@ -767,7 +761,7 @@ fun GoalItem(goal: Goal, goalManager: GoalManager) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable { /* Handle click on a goal item if needed */ }
+            .clickable { }
     ) {
         Row {
             Column(
@@ -782,12 +776,8 @@ fun GoalItem(goal: Goal, goalManager: GoalManager) {
                 Text(text = "Goal ID: ${goal.goalId}", style = MaterialTheme.typography.subtitle1)
                 Text(text = "User ID: ${goal.userId}", style = MaterialTheme.typography.subtitle1)
             }
-//            delete goal button
             IconButton(
                 onClick = {
-
-
-//                    calling removeGoal function from GoalManager class
                     goalManager.removeGoal(goal.goalId)
                 }
             ) {
@@ -840,7 +830,6 @@ fun AppBar(navController: NavController) {
 
         },
         actions = {
-//            search tab at top
             IconButton(onClick = {
                 navController.navigate("search")
             }) {
@@ -850,7 +839,7 @@ fun AppBar(navController: NavController) {
     )
 }
 
-// navigation bar
+//Navbar
 @Composable
 fun NavigationBar(navController: NavController) {
     BottomAppBar() {
@@ -883,17 +872,6 @@ fun NavigationBar(navController: NavController) {
 }
 
 @Composable
-fun NavigationItem(route: String, icon: ImageVector, navController: NavController) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        IconButton(onClick = { navController.navigate(route) }) {
-            Icon(icon, contentDescription = route)
-        }
-        Text(text = route, color = Color.Black) // Adjust color or style as needed
-    }
-}
-
-
-@Composable
 fun NavigationItem(icon: ImageVector, label: String, onClick: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         IconButton(onClick = onClick) {
@@ -914,6 +892,7 @@ fun HomeScreenPreview() {
     }
 }
 
+//Siden for søk
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchScreen() {
@@ -956,7 +935,6 @@ fun SearchScreen() {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Add a separate TextField for age
             TextField(
                 value = ageQuery,
                 onValueChange = { ageQuery = it },
@@ -986,11 +964,8 @@ fun SearchScreen() {
                     items(searchResults) { userProfile ->
                         SearchResultItem(
                             userProfile = userProfile,
-                            onProfileClick = {
-                                // Handle profile selection
-                            },
+                            onProfileClick = {},
                             onChatClick = {
-                                // Navigate to private chat with the selected username
                                 navController.navigate("privateChat/${userProfile.username}")
                             }
                         )
